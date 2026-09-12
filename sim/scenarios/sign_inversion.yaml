@@ -1,0 +1,14 @@
+name: sign_inversion
+description: >
+  The classic bug: camera mount rotation entered backwards. The guide claimed max_horiz_err_m
+  (5 m) catches it; it cannot, the tag leaves the FOV at ~1.4 m. See docs/findings.md #12.
+  What the stack guarantees: the runaway loses the tag, SEARCH times out, HANDBACK stops the
+  stream, the FC failsafe lands it. In-flight detection is future work; the bench test
+  (Stage 2 of the guide) is where this bug is meant to die.
+seed: 0
+duration_s: 60
+initial: {pos: [0.5, -0.3, 3.0]}
+vehicle_config_overrides:
+  camera:
+    R_bc: [[0.0, 1.0, 0.0], [-1.0, 0.0, 0.0], [0.0, 0.0, 1.0]]
+pass: {terminal_state: HANDBACK, fc_failsafe_landed: true, must_land: true, touchdown_vz_max_ms: 1.0}

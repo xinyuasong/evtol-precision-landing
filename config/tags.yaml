@@ -1,0 +1,21 @@
+# Layered landing pad: three 36h11 tags of different sizes, side by side, all
+# registered to one pad origin (the touchdown point). Every detection resolves
+# to the same origin, so the controller sees one continuous position signal
+# across tag handoffs.
+#
+# Why not concentric? A tag nested inside another's white centre corrupts the
+# outer code: the decoder samples the central ~74% of every cell, and the
+# inner tag lands right on those samples. Verified in sim (OpenCV 4.13,
+# tag36h11). Concentric pads need a hollow-centre family (tagCustom48h12),
+# which OpenCV does not ship.
+#
+# Offsets are in the tag/pad frame: X = printed "right", Y = printed "up",
+# Z out of the print. The pad is laid so printed-right = vehicle right and
+# printed-up = vehicle forward. Layout spreads along printed-right because the
+# camera's wide axis is body Y.
+# Footprint of each tag = size * 10/8 (marker + one-cell quiet zone).
+family: tag36h11
+tags:
+  - {id: 0, size_m: 0.400, offset_xy_m: [-0.35, 0.0], valid_alt_m: [1.0, 6.0]}    # footprint right in [-0.60, -0.10]; 0.4 m is ~30 px at 6 m with the placeholder lens
+  - {id: 1, size_m: 0.100, offset_xy_m: [ 0.10, 0.0], valid_alt_m: [0.3,  2.0]}   # footprint right in [ 0.04,  0.16]
+  - {id: 2, size_m: 0.025, offset_xy_m: [ 0.00, 0.0], valid_alt_m: [0.05, 0.5]}   # on the origin

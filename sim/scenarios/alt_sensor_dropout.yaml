@@ -1,0 +1,11 @@
+name: alt_sensor_dropout
+description: >
+  Altitude source stops answering for 3 s mid-descent. With a single altitude source the
+  only safe behaviour is to stop commanding throttle and hand over to the FC failsafe.
+  This scenario tests less than its name suggests (see README).
+seed: 0
+duration_s: 120
+initial: {pos: [0.5, -0.3, 3.0]}
+environment:
+  alt_sensor: {dropout_start_s: 8.0, dropout_end_s: 11.0}
+pass: {must_land: true, safety_trip_required: true, safety_trip_contains: altitude, fc_failsafe_landed: true, touchdown_vz_max_ms: 1.0}

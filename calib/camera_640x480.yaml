@@ -1,0 +1,13 @@
+# PLACEHOLDER INTRINSICS — synthetic pinhole, zero distortion.
+# Not from a real calibration. Replace with calib/calibrate.py output before any
+# hardware use. The simulator renders and detects with these same numbers, so
+# they are self-consistent in simulation and meaningless on a real camera.
+image_width: 640
+image_height: 480
+camera_matrix:
+  - [500.0, 0.0, 320.0]
+  - [0.0, 500.0, 240.0]
+  - [0.0, 0.0, 1.0]
+distortion_coefficients: [0.0, 0.0, 0.0, 0.0, 0.0]
+rms_reprojection_error: null
+placeholder: true

@@ -1,0 +1,8 @@
+name: tag_occluded_2s
+description: Pad fully occluded for 2 s mid-descent. Must abort or re-search, re-acquire, and land.
+seed: 0
+duration_s: 120
+initial: {pos: [0.5, -0.3, 3.0]}
+environment:
+  camera: {occlusion_start_s: 7.0, occlusion_end_s: 9.0}
+pass: {touchdown_err_max_m: 0.15, terminal_state: DISARM, no_safety_trip: true, no_fc_failsafe: true, visited_state: ABORT}

@@ -1,0 +1,8 @@
+name: tag_lost_in_final
+description: Tag lost for good below the FINAL commit altitude. FINAL ignores vision and lands open-loop; no abort, no climb.
+seed: 0
+duration_s: 90
+initial: {pos: [0.5, -0.3, 3.0]}
+environment:
+  camera: {occlusion_below_alt_m: 0.17}
+pass: {terminal_state: DISARM, touchdown_err_max_m: 0.15, no_fc_failsafe: true, no_safety_trip: true, never_visited_state: ABORT}

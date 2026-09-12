@@ -1,0 +1,9 @@
+name: touchdown_detect_fails
+description: Touchdown detection deliberately broken (threshold below any possible reading). The FINAL timeout must disarm anyway.
+seed: 0
+duration_s: 90
+initial: {pos: [0.5, -0.3, 3.0]}
+vehicle_config_overrides:
+  altitude:
+    touchdown: {alt_m: -1.0, max_throttle_us: 0}   # neither signature can ever fire
+pass: {terminal_state: DISARM, must_land: true, transition_reason_contains: timeout, no_fc_failsafe: true, touchdown_err_max_m: 0.15}

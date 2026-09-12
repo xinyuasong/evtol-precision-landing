@@ -1,0 +1,126 @@
+# Every gain, limit, and threshold lives here. control/ contains no magic numbers.
+# Loaded and schema-checked by control/config.py at startup; a missing key fails
+# before the loop starts, not at altitude.
+
+serial:
+  port: /dev/serial0          # overridden by --port
+  baud: 115200
+  timeout_s: 0.05
+
+loop:
+  rate_hz: 50
+  pose_max_age_s: 0.25        # a pose older than this is treated as no pose
+
+telemetry:
+  rate_hz: 20
+  armed_flag_bit: 0           # bit in MSP_STATUS flightModeFlags (INAV: ARM = bit 0)
+  override_flag_bit: 1        # bit that reports the MSP-override AUX mode engaged
+
+pose:
+  udp_host: 127.0.0.1
+  udp_port: 5600
+  max_reproj_err_px: 2.0
+
+camera:
+  # Camera (OpenCV: X right, Y down, Z forward) -> body FRD.
+  # Downward-facing, image-top toward the nose.
+  R_bc:
+    - [0.0, -1.0, 0.0]
+    - [1.0,  0.0, 0.0]
+    - [0.0,  0.0, 1.0]
+
+filter:
+  # r0 is a VARIANCE. 0.0004 = 2 cm sigma at z_ref. The guide's 0.01 (10 cm sigma) made the
+  # filter lag the measurement so badly that no gain set was stable (tools/tune_horizontal.py).
+  q: 1.0                      # process noise (accel variance)
+  r0: 0.0004                  # measurement variance at z_ref
+  z_ref_m: 2.0
+  coast_max_s: 0.5            # predict-only for at most this long without a measurement
+
+guidance:
+  stick_scale: 0.20           # controller output 1.0 -> this fraction of full stick (5 deg at a 25 deg ANGLE limit). Sets loop gain; do not touch without retuning.
+  authority: 0.20             # hard clip on the stick autonomy may command. Raising it adds headroom WITHOUT changing loop gain (findings #14).
+  # Output is normalised stick; with stick_scale 0.20 and a 25 deg ANGLE limit, 1.0 = 5 deg lean.
+  # Tuned with tools/tune_horizontal.py (2 kg, att tau 0.12 s, 50 ms latency): settles a 0.5 m
+  # offset in ~2.5 s with <10 cm overshoot. The guide's 0.45/0.02/0.25 gave a 10 s oscillation.
+  # ki * i_limit is the steady lean the integrator may hold: 0.3 * 2.5 = 0.75 of authority,
+  # enough for ~0.6 m/s^2 of steady disturbance (a 5 m/s wind on a 2 kg airframe).
+  x: {kp: 1.00, ki: 0.30, kd: 1.60, i_limit: 2.5, out_limit: 1.0, d_tau_s: 0.08}
+  y: {kp: 1.00, ki: 0.30, kd: 1.60, i_limit: 2.5, out_limit: 1.0, d_tau_s: 0.08}
+  yaw:
+    enabled: false
+    pid: {kp: 0.60, ki: 0.0, kd: 0.10, i_limit: 0.1, out_limit: 1.0, d_tau_s: 0.08}
+
+altitude:
+  # Pi owns the altitude loop. ASSUMES rangefinder-grade altitude; see README.
+  # Output is a fraction of throttle_authority * range_us added to the hover feedforward.
+  # The integrator must be able to cancel ground effect (+15-25% thrust near the ground).
+  pid: {kp: 1.50, ki: 1.00, kd: 1.00, i_limit: 1.0, out_limit: 1.0, d_tau_s: 0.08}
+  hover_throttle_us: 1500     # feedforward: stick value that hovers the airframe
+  throttle_authority: 0.30    # fraction of stick range the PID may add to hover
+  lowpass_tau_s: 0.10         # altitude/vario low-pass
+  descent:
+    climb_err_m: 0.60         # horizontal error above which we climb to regain the tag
+    climb_rate_ms: 0.20
+    hold_err_m: 0.25          # horizontal error above which descent pauses
+    rate_min_ms: 0.15
+    rate_per_m: 0.10          # descent rate grows with altitude
+    rate_max_ms: 0.50
+  final:
+    descent_rate_ms: 0.15     # open-loop, vision ignored
+    setpoint_floor_m: -0.15   # let the setpoint run below the ground so P keeps pushing through ground effect
+  abort:
+    climb_to_m: 2.0
+    climb_rate_ms: 0.50
+  ground_effect:
+    height_m: 0.40            # thrust augmentation starts below this altitude
+    ff_reduction: 0.12        # fraction of (hover - min) throttle removed at zero altitude
+  touchdown:
+    alt_m: 0.04               # a ground-effect hover at 6-10 cm is NOT a touchdown
+    vario_ms: 0.05
+    max_throttle_us: 1440     # and the loop must be commanding well under hover
+    sustain_s: 0.5
+    stall_sustain_s: 1.0      # must be shorter than state_machine.descend_lost_s, or the camera goes blind on the ground first; descent commanded but altitude not moving and throttle low for this long = on the ground, whatever the altimeter says
+
+rc:
+  mid_us: 1500
+  range_us: 500
+  min_us: 1000
+  max_us: 2000
+  map: AETR                   # must match the FC's rxmap/map setting
+  # Stick sense. Must match the flight controller. See sim/fc_model.py (PITCH_STICK_SIGN) for
+  # the firmware reasoning and tests/test_rc_convention.py for the assertion. UNVERIFIED on
+  # hardware: a props-off bench test settles it, then flip the one that is wrong.
+  roll_sign: 1                # +1: out_y > 0 (move right) -> roll channel above mid
+  pitch_sign: -1              # -1: out_x > 0 (move forward) -> pitch channel BELOW mid (channel above mid = nose up = backward)
+  yaw_sign: 1
+  aux_channels: [1500, 1500, 1500, 1500]
+
+state_machine:
+  detection_gap_s: 0.15       # tag counts as continuously seen while gaps are shorter than this (~4 frames at 30 fps)
+  acquire_consecutive_frames: 5
+  acquire_settle_s: 1.0
+  acquire_sigma_max_m: 0.20   # raw pose spread over the settle window; 0.05 never settles in gusts (the vehicle itself moves that much)
+  track_timeout_s: 20.0
+  track_lost_s: 2.0
+  track_ok_err_m: 0.20
+  track_stable_s: 2.0
+  descend_lost_s: 1.5
+  final_alt_m: 0.20
+  final_timeout_s: 8.0        # if touchdown is never detected, disarm anyway (the setpoint floor would otherwise drive into the ground forever)
+  final_err_m: 0.08
+  search_timeout_s: 30.0      # SEARCH with no acquisition for this long -> HANDBACK: stop transmitting, FC failsafe lands
+  abort_min_hold_s: 2.0
+
+safety:
+  startup_grace_s: 1.0        # telemetry that has never arrived is not "stale" before this
+  loop_overrun_s: 0.10
+  attitude_timeout_s: 0.50
+  altitude_timeout_s: 0.50
+  max_alt_m: 15.0
+  max_horiz_err_m: 5.0        # implausible measurement gate. NOT the sign-inversion catch: the tag leaves a 640x480 FOV at ~1.9 m from 3 m
+  divergence_m: 0.6           # sign-inversion catch: horizontal error grew by this much over the window while the controller had authority
+  divergence_window_s: 3.0
+  divergence_monotonic_frac: 0.85  # fraction of samples in the window that must be non-decreasing; a gust excursion turns around, an inversion never does
+  min_vbat_v: 21.0            # 6S
+  max_tilt_deg: 45.0

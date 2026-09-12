@@ -1,0 +1,8 @@
+name: battery_sag
+description: Battery sags below the 6S floor mid-flight. Safety trips, stream stops, FC lands it.
+seed: 0
+duration_s: 120
+initial: {pos: [0.5, -0.3, 3.0]}
+environment:
+  battery: {v0: 22.0, sag_start_s: 5.0, sag_v_per_s: 0.5}
+pass: {must_land: true, safety_trip_required: true, safety_trip_contains: battery, fc_failsafe_landed: true}

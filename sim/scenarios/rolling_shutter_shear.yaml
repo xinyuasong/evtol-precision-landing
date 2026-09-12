@@ -1,0 +1,8 @@
+name: rolling_shutter_shear
+description: 6 px peak row shear at 80 Hz vibration. No divergent oscillation.
+seed: 0
+duration_s: 120
+initial: {pos: [0.5, -0.3, 3.0]}
+environment:
+  camera: {rolling_shutter_shear_px: 6.0, vibration_hz: 80.0}
+pass: {touchdown_err_max_m: 0.20, terminal_state: DISARM, no_safety_trip: true, max_horiz_err_m: 1.5}

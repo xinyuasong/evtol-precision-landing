@@ -1,0 +1,20 @@
+[project]
+name = "evtol-precision-landing"
+version = "0.1.0"
+description = "Vision-guided multirotor precision landing: MSP control stack validated against a mocked flight controller"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+
+[tool.ruff]
+line-length = 160
+target-version = "py310"
+extend-exclude = ["vision/"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+markers = ["slow: real-time or multi-scenario tests (run with -m slow or by default in CI's slow job)"]

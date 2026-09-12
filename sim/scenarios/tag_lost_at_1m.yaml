@@ -1,0 +1,11 @@
+name: tag_lost_at_1m
+description: >
+  Tag lost for good at 1 m, above the FINAL commit altitude. Correct behaviour is ABORT
+  (climb, hold), re-search, then give up: HANDBACK stops the stream and the FC failsafe
+  lands. Must not climb away or hover until the battery dies.
+seed: 0
+duration_s: 120
+initial: {pos: [0.5, -0.3, 3.0]}
+environment:
+  camera: {occlusion_below_alt_m: 1.0}
+pass: {visited_state: ABORT, terminal_state: HANDBACK, fc_failsafe_landed: true, max_alt_m: 3.5, must_land: true}
