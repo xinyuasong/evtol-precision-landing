@@ -7,3 +7,4 @@ logs/
 sim/results/
 vision/build/
 .venv/
+media/

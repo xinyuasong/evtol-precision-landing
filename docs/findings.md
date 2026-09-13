@@ -155,3 +155,22 @@ gain. (The gust scenario still fails, for a different reason: see README Status.
   The pilot now hovers manually until the switch is flipped, as on the real aircraft.
 - The mock FC failsafe disarmed at 12 cm while still on the ground-effect cushion and
   dropped the aircraft. It now disarms on the ground.
+
+## 16. SEARCH has no position reference, so tag loss in wind is unrecoverable
+**Assumed:** `wind_gust_8ms` failed because the vehicle could not meet the "error under
+20 cm for 2 s" gate and timed out without ever descending. That is what the single-line
+scenario result suggested, and it is wrong.
+**Shown:** plotting the run (`tools/record_run.py`) tells a different story. The vehicle
+acquires, tracks, enters DESCEND at 18 s, and descends from 3.0 m to 0.55 m. At 29 s a gust
+pushes the pad out of frame, DESCEND aborts on tag loss, and the FSM returns to SEARCH —
+where the horizontal sticks are neutral, because with no tag there is no position reference
+at all in this design (no GPS, no optical flow). The vehicle then drifts downwind at the
+wind speed for 29 s, never sees the pad again, times out, hands back, and the FC failsafe
+lands it 68 m away. The 50 m trajectory is the vehicle being blown away with the sticks
+centred, not a control failure.
+**Changed:** nothing yet — this is the open item. The fix is a position reference that
+survives tag loss: hold the last KF estimate and dead-reckon during SEARCH, bias SEARCH
+upwind using the integrator's wind estimate, or accept GPS position-hold as the SEARCH
+behaviour (which is what the guide's SEARCH state assumed the FC would provide, and this
+build does not). The lesson is about the metric, not just the bug: a one-line scenario
+result named the wrong failure mode, and the picture corrected it.

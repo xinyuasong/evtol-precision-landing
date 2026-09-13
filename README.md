@@ -21,7 +21,7 @@ Scenario results (one seed each, Python detector, direct transport):
 |---|---|---|
 | nominal_calm | baseline | **1.7 cm**, DISARM |
 | wind_steady_5ms | integrator authority | **1.2 cm** |
-| wind_gust_8ms | disturbance rejection | **FAIL** — holds ±0.5 m but never satisfies the 20 cm / 2 s descent gate; times out → HANDBACK |
+| wind_gust_8ms | disturbance rejection | **FAIL** — descends 3.0 → 0.55 m, then a gust takes the pad out of frame; SEARCH has no position reference, so the vehicle drifts downwind and never re-acquires (findings #16) |
 | tag_occluded_2s | tag-loss recovery | 2.4 cm via ABORT → re-acquire |
 | tag_lost_at_1m | give-up path | ABORT → SEARCH → HANDBACK → FC failsafe lands |
 | tag_lost_in_final | FINAL commit | 0.8 cm, no abort |
@@ -37,9 +37,8 @@ Scenario results (one seed each, Python detector, direct transport):
 | touchdown_detect_fails | FINAL timeout | timeout disarms, 1.7 cm |
 | moving_pad_0p5mps | stretch | 1.8 cm |
 
-16 of 17 pass. The two honest negatives: the gust scenario's centring gate is stricter than
-the airframe can meet in 8 m/s gusts at any authority (a gust-aware gate is the next piece
-of work), and an inverted camera transform is not detectable from 3 m with this field of
+16 of 17 pass. The two honest negatives: the gust scenario exposes that SEARCH holds attitude
+rather than position, so any tag loss in wind is unrecoverable (findings #16), and an inverted camera transform is not detectable from 3 m with this field of
 view — the bench test is where that bug is meant to die, and the simulator proved the
 guide's claim that a 5 m error gate catches it is wrong.
 
@@ -56,6 +55,7 @@ barometer being wrong at touchdown.
 
 ## Documentation
 
+- `media/` — rendered camera view, contact sheet and dashboard from a run (`make media`).
 - `docs/GUIDE.md` — full setup, run, and test instructions plus a walkthrough of every file.
 - `docs/findings.md` — the fifteen falsified assumptions. Start here.
 
