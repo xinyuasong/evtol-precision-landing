@@ -17,26 +17,26 @@ drifts metres in ground effect and would make it unflyable near touchdown.
 
 Scenario results (one seed each, Python detector, direct transport):
 
-| Scenario | Tests | Result |
-|---|---|---|
-| nominal_calm | baseline | **0.6 cm**, DISARM |
-| demo_offset_approach | 2.2 m offset approach from 4 m (the media run) | 9.7 cm, DISARM |
-| wind_steady_5ms | integrator authority | **1.2 cm** |
-| wind_gust_8ms | disturbance rejection | **FAIL** — descends 3.0 → 0.55 m, then a gust takes the pad out of frame; SEARCH has no position reference, so the vehicle drifts downwind and never re-acquires (findings #16) |
-| tag_occluded_2s | tag-loss recovery | 2.4 cm via ABORT → re-acquire |
-| tag_lost_at_1m | give-up path | ABORT → SEARCH → HANDBACK → FC failsafe lands |
-| tag_lost_in_final | FINAL commit | 0.8 cm, no abort |
-| high_latency_150ms | latency margin | 0.3 cm |
-| pose_noise_high | filter performance | 0.8 cm |
-| rolling_shutter_shear | vibration realism | 0.7 cm |
-| alt_sensor_dropout | single-source altitude | safety trips → FC lands, 2.7 cm |
-| alt_bias_drift | biased altimeter | 0.4 cm, touchdown detected from stalled descent |
-| ground_effect_strong | cushion | 0.6 cm |
-| companion_stall | failsafe layers | Pi frozen → FC LAND, 1.6 cm |
-| battery_sag | safety trip | trips → FC lands, 6.9 cm |
-| sign_inversion | the classic bug | NOT caught in flight (findings #12); HANDBACK → FC lands 55 m away |
-| touchdown_detect_fails | FINAL timeout | timeout disarms, 1.7 cm |
-| moving_pad_0p5mps | stretch | 1.8 cm |
+| Scenario               | What it exercises                              | Result |
+| ---------------------- | ---------------------------------------------- | ------ |
+| nominal_calm           | baseline                                       | **0.6 cm**, DISARM |
+| demo_offset_approach   | 2.2 m offset approach from 4 m (the media run) | 9.7 cm, DISARM |
+| wind_steady_5ms        | integrator authority                           | **1.2 cm** |
+| wind_gust_8ms          | disturbance rejection                          | **FAIL** — drifts downwind after gust, never re-acquires (see Known limitations) |
+| tag_occluded_2s        | tag-loss recovery                              | 2.4 cm via ABORT → re-acquire |
+| tag_lost_at_1m         | give-up path                                   | ABORT → SEARCH → HANDBACK → FC failsafe lands |
+| tag_lost_in_final      | FINAL commit                                   | 0.8 cm, no abort |
+| high_latency_150ms     | latency margin                                 | 0.3 cm |
+| pose_noise_high        | filter performance                             | 0.8 cm |
+| rolling_shutter_shear  | vibration realism                              | 0.7 cm |
+| alt_sensor_dropout     | single-source altitude                         | safety trips → FC lands, 2.7 cm |
+| alt_bias_drift         | biased altimeter                               | 0.4 cm, touchdown detected from stalled descent |
+| ground_effect_strong   | cushion                                        | 0.6 cm |
+| companion_stall        | failsafe layers                                | Pi frozen → FC LAND, 1.6 cm |
+| battery_sag            | safety trip                                    | trips → FC lands, 6.9 cm |
+| sign_inversion         | the classic bug                                | NOT caught in flight (findings #12); HANDBACK → FC lands 55 m away |
+| touchdown_detect_fails | FINAL timeout                                  | timeout disarms, 1.7 cm |
+| moving_pad_0p5mps      | stretch                                        | 1.8 cm |
 
 16 of 17 pass. The two honest negatives: the gust scenario exposes that SEARCH holds attitude
 rather than position, so any tag loss in wind is unrecoverable (findings #16), and an inverted camera transform is not detectable from 3 m with this field of

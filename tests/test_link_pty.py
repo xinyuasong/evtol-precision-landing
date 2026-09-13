@@ -3,7 +3,15 @@ MSP responder that lives entirely in this test. Proves the transport path the
 control node uses on hardware, byte for byte."""
 
 import os
-import pty
+import sys
+import pytest
+
+pytestmark = pytest.mark.skipif(
+    sys.platform == "win32", reason="pty transport is POSIX-only"
+)
+
+if sys.platform != "win32":
+    import pty
 import threading
 import time
 

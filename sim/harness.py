@@ -19,8 +19,12 @@ import copy
 import heapq
 import math
 import os
-import pty
 import socket
+import sys
+
+HAS_PTY = sys.platform != "win32"
+if HAS_PTY:
+    import pty
 import subprocess
 import sys
 import threading
