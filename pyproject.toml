@@ -18,3 +18,7 @@ ignore = ["E501"]
 testpaths = ["tests"]
 addopts = "-q"
 markers = ["slow: real-time or multi-scenario tests (run with -m slow or by default in CI's slow job)"]
+
+[tool.ruff.lint.per-file-ignores]
+"sim/harness.py" = ["E402"]
+"tests/test_link_pty.py" = ["E402"]
