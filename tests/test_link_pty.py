@@ -4,11 +4,10 @@ control node uses on hardware, byte for byte."""
 
 import os
 import sys
+
 import pytest
 
-pytestmark = pytest.mark.skipif(
-    sys.platform == "win32", reason="pty transport is POSIX-only"
-)
+pytestmark = pytest.mark.skipif(sys.platform == "win32", reason="pty transport is POSIX-only")
 
 if sys.platform != "win32":
     import pty

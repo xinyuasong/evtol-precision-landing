@@ -9,3 +9,4 @@ vision/build/
 .venv/
 media/
 eVTOL_Precision_Landing_Guide.docx
+!media/*.png
