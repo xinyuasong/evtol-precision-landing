@@ -54,6 +54,11 @@ source and fusion (`control/altitude.py` has the interface; no second implementa
 `ground_effect_strong` likewise tests the throttle loop against extra thrust, not a
 barometer being wrong at touchdown.
 
+## Documentation
+
+- `docs/GUIDE.md` — full setup, run, and test instructions plus a walkthrough of every file.
+- `docs/findings.md` — the fifteen falsified assumptions. Start here.
+
 ## docs/findings.md
 Fifteen design assumptions the simulator falsified, with evidence and what changed. That
 file is the point of the project; start there.
