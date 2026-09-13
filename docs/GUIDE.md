@@ -20,6 +20,35 @@ The gap is closed with vision: a downward camera sees a printed AprilTag (a blac
 fiducial marker, like a chunky QR code designed for robots), works out where the pad is
 relative to the aircraft, and steers toward it.
 
+## Why the pad has three tags of different sizes
+
+This is the thing that looks strange in the rendered frames, so it's worth explaining first.
+
+A tag has to be big enough to decode from altitude and small enough to stay inside the frame
+at touchdown. Those requirements fight each other. With this camera (500 px focal length,
+640x480), a 40 cm tag is 50 px wide at 4 m — decodes fine — but at 30 cm altitude it would be
+667 px wide, far outside the frame. A 2.5 cm tag is readable at 20 cm and invisible at 3 m.
+
+So the pad carries three: **40 cm, 10 cm, and 2.5 cm**, each with an altitude band it's
+valid in (`config/tags.yaml`). The controller uses whichever is usable right now, and hands
+off between them as it descends. In the contact sheet you can watch it happen: big tag only
+at 4 m, big + medium at 2 m, medium + small at 0.5 m, small only at 0.1 m, nothing at
+touchdown.
+
+**They are side by side, not nested.** The original design called for concentric tags —
+small ones printed inside the big one's white centre. That does not work: the AprilTag
+decoder samples the middle of every cell, so an inner tag lands on the outer tag's samples
+and corrupts its code. The outer tag then fails to decode at *every* altitude. That's
+finding #1 in `docs/findings.md`, and it's why the pad looks like three tags in a row.
+
+**Why it looks like the drone lands on the tiny tag.** Each tag's position on the pad is
+recorded as an offset from the pad origin — the actual touchdown point. Tag 0 sits 35 cm to
+one side, tag 1 sits 10 cm to the other side, and tag 2 sits *on* the origin. Whichever tag
+is detected, the controller subtracts that tag's offset and gets the same pad origin, so it
+sees one continuous position signal with no jump at handoff. The amber crosshair in the
+rendered frames is that resolved origin. The drone isn't aiming at the small tag; the small
+tag just happens to be printed where the drone is aiming.
+
 ## Why there are two computers
 
 This is the architectural spine, and it's worth understanding before anything else.
@@ -304,7 +333,71 @@ Six panels: trajectory from above, horizontal error over time, altitude (true vs
 the FSM state timeline, the PID terms broken out separately, and the RC channels. Needs a
 display; on a headless box, copy the CSV somewhere with a screen.
 
-## Step 8 — Build the C++ detector (optional)
+## Step 8 — Make pictures of a run
+
+The simulator renders real camera frames, so you can save them. This produces an animated
+GIF of the camera view, a six-frame contact sheet, and a six-panel dashboard:
+
+```bash
+python tools/record_run.py sim/scenarios/demo_offset_approach.yaml --out media
+```
+
+Takes about 90 seconds and writes three files into `media/`:
+
+| File | What it is |
+|---|---|
+| `<scenario>_camera.gif` | The camera view through the whole flight, with overlays and a status bar |
+| `<scenario>_frames.png` | Six stills spread across the run, side by side |
+| `<scenario>_dashboard.png` | Trajectory, error, altitude, state timeline, PID terms, RC channels |
+
+Both demo runs at once:
+
+```bash
+make media
+```
+
+### How to read the overlay
+
+- **Green box** — the tag square, reprojected from the pose `solvePnP` recovered. This is the
+  detector's own answer drawn back onto the image, not ground truth. If the pose solution were
+  wrong, the box would not sit on the tag. It's a visual assertion.
+- **Green label** — tag ID and reprojection error in pixels. Under ~0.5 px is a clean fit;
+  the controller rejects anything over 2 px.
+- **Amber crosshair** — the pad origin after that tag's offset has been applied. All three
+  tags should put the crosshair in the same place; that's the handoff working.
+- **Status bar** — simulation time, mission state, true altitude, horizontal error, and how
+  many tags were detected in that frame.
+
+### Which scenario to record
+
+`demo_offset_approach.yaml` is the one built for showing the system off: the vehicle starts
+2.2 m from the pad and 4 m up, so the pad sits in the **top-left corner** of the frame. The
+pilot hovers manually for the first 4 seconds — state `IDLE`, autonomy computing nothing —
+then flips the MSP-override switch. The stack acquires, flies across to the pad, centres,
+descends, hands off between all three tags, and lands.
+
+Any scenario works:
+
+```bash
+python tools/record_run.py sim/scenarios/wind_gust_8ms.yaml --out media     # the failure
+python tools/record_run.py sim/scenarios/tag_occluded_2s.yaml --out media   # loses the tag, recovers
+python tools/record_run.py sim/scenarios/pose_noise_high.yaml --out media   # noisy, dim, blurry
+```
+
+Useful flags: `--gif-stride N` keeps every Nth frame (higher = smaller file), `--gif-scale`
+sets the resolution (1.0 keeps full 640x480), `--seed N` picks a different random draw.
+
+### Why the image shakes
+
+That's real, and it comes out of the physics rather than being added for effect. The vehicle
+tilts to accelerate, so the camera tilts with it; `camera_sim.py` applies motion blur whose
+length and direction come from the vehicle's own velocity and angular rate over the exposure
+time. Wind and gusts move the airframe, and the frame moves with it. In the
+`rolling_shutter_shear` scenario the rows are additionally sheared at the vibration
+frequency, which is what a rolling-shutter sensor does on a vibrating airframe — and which
+makes `solvePnP` return confident, wrong answers.
+
+## Step 9 — Build the C++ detector (optional)
 
 The vision node has two implementations: Python (`vision/py/detector_py.py`, used by
 everything above) and C++ (`vision/src/`, what would run on the Pi). They must agree, or
@@ -320,7 +413,7 @@ That test feeds identical rendered frames to both detectors and asserts the reco
 match within 5 mm. **Caveat: this has never been compiled.** It is written but unbuilt —
 expect compiler complaints on the first attempt. Fixing them is a genuine next task.
 
-## Step 9 — The real-time transport test
+## Step 10 — The real-time transport test
 
 ```bash
 python -m pytest -m slow -v
@@ -474,9 +567,12 @@ python -m sim.runner sim/scenarios/nominal_calm.yaml --transport pty   # real se
 python -m sim.runner --all                                        # 17 scenarios, 8 min
 nohup python -m sim.runner --all --monte-carlo 30 --out sim/results/mc > mc.log 2>&1 &
 
-python -m sim.viz sim/results/nominal_calm_seed0.csv              # plots
+python -m sim.viz sim/results/nominal_calm_seed0.csv              # interactive plots
+python tools/record_run.py sim/scenarios/demo_offset_approach.yaml --out media   # GIF + stills
+make media                                                        # both demo runs
 python tools/tune_horizontal.py                                   # gain sweep
 
 make ci                                          # lint + tests
+make scenarios                                   # all 17 scenarios
 make vision                                      # C++ build (never yet compiled)
 ```

@@ -1,0 +1,14 @@
+name: demo_offset_approach
+description: >
+  Demo run for the media. The vehicle starts 2.2 m away from the pad and 4 m up, so the pad
+  sits in the top-left corner of the frame. The pilot hovers manually for the first 4 s
+  (IDLE, no autonomy), then flips the MSP-override switch: the stack acquires, flies over
+  the pad, and lands. Light wind so the frame moves the way a real airframe does.
+seed: 0
+duration_s: 120
+arm_at_s: 4.0
+initial: {pos: [-1.2, 1.84, 4.0]}
+environment:
+  wind: {steady_ms: [0.6, -0.4], gust_sigma_ms: 0.8, gust_tau_s: 2.0}
+  camera: {fps: 30, latency_s: 0.04, noise_sigma: 5.0, exposure_s: 0.006}
+pass: {touchdown_err_max_m: 0.15, terminal_state: DISARM, no_safety_trip: true, no_fc_failsafe: true}

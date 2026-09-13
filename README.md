@@ -19,7 +19,8 @@ Scenario results (one seed each, Python detector, direct transport):
 
 | Scenario | Tests | Result |
 |---|---|---|
-| nominal_calm | baseline | **1.7 cm**, DISARM |
+| nominal_calm | baseline | **0.6 cm**, DISARM |
+| demo_offset_approach | 2.2 m offset approach from 4 m (the media run) | 9.7 cm, DISARM |
 | wind_steady_5ms | integrator authority | **1.2 cm** |
 | wind_gust_8ms | disturbance rejection | **FAIL** — descends 3.0 → 0.55 m, then a gust takes the pad out of frame; SEARCH has no position reference, so the vehicle drifts downwind and never re-acquires (findings #16) |
 | tag_occluded_2s | tag-loss recovery | 2.4 cm via ABORT → re-acquire |
