@@ -302,7 +302,8 @@ python -m sim.runner --all --monte-carlo 30 --out sim/results/mc
 **This takes about 3–4 hours on one core.** Run it in the background and come back:
 
 ```bash
-nohup python -m sim.runner --all --monte-carlo 30 --out sim/results/mc > mc.log 2>&1 &
+nohup python -m sim.runner --all --monte-carlo 30 \
+      --out sim/results/mc > mc.log 2>&1 &
 tail -f mc.log        # watch it; Ctrl-C stops watching, not the run
 ```
 
@@ -356,6 +357,8 @@ Both demo runs at once:
 make media
 ```
 
+![Six frames from demo_offset_approach: the pad starts in the top-left corner and the vehicle closes on it, handing off between all three tags as it descends.](../media/demo_offset_approach_frames.png)
+
 ### How to read the overlay
 
 - **Green box** — the tag square, reprojected from the pose `solvePnP` recovered. This is the
@@ -368,6 +371,8 @@ make media
 - **Status bar** — simulation time, mission state, true altitude, horizontal error, and how
   many tags were detected in that frame.
 
+![The dashboard for the same run: trajectory, horizontal error against both gates, altitude, mission state, PID terms, and the RC values sent over MSP.](../media/demo_offset_approach_dashboard.png)
+
 ### Which scenario to record
 
 `demo_offset_approach.yaml` is the one built for showing the system off: the vehicle starts
@@ -379,9 +384,11 @@ descends, hands off between all three tags, and lands.
 Any scenario works:
 
 ```bash
-python tools/record_run.py sim/scenarios/wind_gust_8ms.yaml --out media     # the failure
-python tools/record_run.py sim/scenarios/tag_occluded_2s.yaml --out media   # loses the tag, recovers
-python tools/record_run.py sim/scenarios/pose_noise_high.yaml --out media   # noisy, dim, blurry
+R=tools/record_run.py
+
+python $R sim/scenarios/wind_gust_8ms.yaml   --out media   # the failure
+python $R sim/scenarios/tag_occluded_2s.yaml --out media   # loses tag, recovers
+python $R sim/scenarios/pose_noise_high.yaml --out media   # noisy, dim, blurry
 ```
 
 Useful flags: `--gif-stride N` keeps every Nth frame (higher = smaller file), `--gif-scale`
@@ -563,14 +570,14 @@ python -m pytest -m "not slow" -v               # with test names
 python -m pytest tests/test_camera_sim.py -v    # one file
 
 python -m sim.runner sim/scenarios/nominal_calm.yaml              # one landing, 15 s
-python -m sim.runner sim/scenarios/nominal_calm.yaml --transport pty   # real serial, 20 s
+python -m sim.runner sim/scenarios/nominal_calm.yaml --transport pty   # real serial
 python -m sim.runner --all                                        # 17 scenarios, 8 min
-nohup python -m sim.runner --all --monte-carlo 30 --out sim/results/mc > mc.log 2>&1 &
+nohup python -m sim.runner --all --monte-carlo 30 \
+      --out sim/results/mc > mc.log 2>&1 &
 
-python -m sim.viz sim/results/nominal_calm_seed0.csv              # interactive plots
-python tools/record_run.py sim/scenarios/demo_offset_approach.yaml --out media   # GIF + stills
-make media                                                        # both demo runs
-python tools/tune_horizontal.py                                   # gain sweep
+python -m sim.viz sim/results/nominal_calm_seed0.csv      # interactive plots
+make media                                               # GIF + stills + dashboards
+python tools/tune_horizontal.py                          # gain sweep
 
 make ci                                          # lint + tests
 make scenarios                                   # all 17 scenarios
