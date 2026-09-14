@@ -5,7 +5,7 @@ virtual sticks over MSP, plus a simulator that speaks the same protocol on the o
 of a pseudo-terminal. **The flight code cannot tell the simulator from hardware**, and a
 test makes sure it never learns to.
 
-## Status — read this first
+## Status
 
 **This stack has not flown. Everything below is validated in simulation.** There is no
 aircraft, no flight controller, and no camera in this repo; the mock flight controller in
